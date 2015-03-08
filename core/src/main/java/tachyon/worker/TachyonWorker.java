@@ -20,6 +20,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.ArrayList;
 
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.server.TServer;
@@ -165,7 +166,7 @@ public class TachyonWorker implements Runnable {
 
   private final WorkerServiceHandler mWorkerServiceHandler;
 
-  private final DataServer mDataServer;
+  private final ArrayList<DataServer> mDataServers;
 
   private final Thread mHeartbeatThread;
 
@@ -206,8 +207,8 @@ public class TachyonWorker implements Runnable {
     // deployment more complicated.
     InetSocketAddress dataAddress = new InetSocketAddress(workerAddress.getHostName(), dataPort);
     BlocksLocker blockLocker = new BlocksLocker(mWorkerStorage, Users.DATASERVER_USER_ID);
-    mDataServer = DataServer.Factory.createDataServer(dataAddress, blockLocker, mTachyonConf);
-    mDataPort = mDataServer.getPort();
+    mDataServers = DataServer.Factory.createDataServer(dataAddress, blockLocker, mTachyonConf);
+    mDataPort = mDataServers.get(0).getPort();
 
     mHeartbeatThread = new Thread(this);
     try {
@@ -360,11 +361,20 @@ public class TachyonWorker implements Runnable {
   public void stop() throws IOException, InterruptedException {
     mStop = true;
     mWorkerStorage.stop();
-    mDataServer.close();
+    for (int i = 0; i < mDataServers.size(); i ++) {
+      mDataServers.get(i).close();
+    }
     mServer.stop();
     mServerTServerSocket.close();
     mExecutorService.shutdown();
-    while (!mDataServer.isClosed() || mServer.isServing() || mHeartbeatThread.isAlive()) {
+    for (int i = 0; i < mDataServers.size(); i ++) {
+      if (!mDataServers.get(i).isClosed()) {
+        mServer.stop();
+        mServerTNonblockingServerSocket.close();
+        CommonUtils.sleepMs(null, 100);
+      }
+    }
+    while (mServer.isServing() || mHeartbeatThread.isAlive()) {
       // TODO The reason to stop and close again is due to some issues in Thrift.
       mServer.stop();
       mServerTServerSocket.close();

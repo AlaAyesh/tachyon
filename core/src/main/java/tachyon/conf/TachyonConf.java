@@ -6,6 +6,8 @@ import java.net.InetSocketAddress;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
@@ -333,6 +335,28 @@ public class TachyonConf {
       }
     } else {
       return defaultValue;
+    }
+  }
+
+  public static <T> List<Class<T>> getClasses(String property, Class<T> defaultValue) {
+    String ret = System.getProperty(property);
+    List<Class<T>> classesList = new ArrayList<Class<T>>();
+    if (ret == null) {
+      classesList.add(defaultValue);
+      return (classesList);
+    }
+    try {
+      ArrayList<String> names = new ArrayList<String>();
+      names.addAll(Arrays.asList(ret.split(",")));
+      for (int i = 0; i < names.size(); i ++) {
+        classesList.add((Class<T>) Class.forName(names.get(i)));
+      }
+      return (classesList);
+    } catch (Exception e) {
+      String msg = "requested class could not be loaded";
+      LOG.error("{} : {} , {}", msg, ret, e);
+      classesList.add(defaultValue);
+      return (classesList);
     }
   }
   
