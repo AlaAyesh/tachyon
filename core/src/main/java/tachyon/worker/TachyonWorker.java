@@ -370,7 +370,7 @@ public class TachyonWorker implements Runnable {
     for (int i = 0; i < mDataServers.size(); i ++) {
       if (!mDataServers.get(i).isClosed()) {
         mServer.stop();
-        mServerTNonblockingServerSocket.close();
+        mServerTServerSocket.close();
         CommonUtils.sleepMs(null, 100);
       }
     }
