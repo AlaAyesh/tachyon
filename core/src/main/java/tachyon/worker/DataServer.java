@@ -18,6 +18,7 @@ package tachyon.worker;
 import java.io.Closeable;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.List;
 
 import com.google.common.base.Throwables;
 
@@ -34,15 +35,15 @@ public interface DataServer extends Closeable {
     public static ArrayList<DataServer> createDataServer(final InetSocketAddress dataAddress,
         final BlocksLocker blockLocker, TachyonConf conf) {
       try {
-        ArrayList<Class<? extends DataServer>> servers =
-            new ArrayList<Class<? extends DataServer>>();
+        Class<?>[] classes = new Class[] {InetSocketAddress.class, BlocksLocker.class, 
+            TachyonConf.class};
+        Object[] objects = new Object[] {dataAddress, blockLocker, conf};
+        List<Class<DataServer>> servers = (List<Class<DataServer>>) (List) conf.getClasses(
+            Constants.WORKER_DATA_SEVRER,Constants.WORKER_DATA_SERVER_CLASS);
         ArrayList<DataServer> workersDataServers = new ArrayList<DataServer>();
-        servers.addAll(conf.getClasses(Constants.WORKER_DATA_SEVRER,
-            Constants.WORKER_DATA_SERVER_CLASS));
         for (int i = 0; i < servers.size(); i ++) {
-          workersDataServers.add(CommonUtils.createNewClassInstance(servers.get(i),
-              new Class[] { InetSocketAddress.class, BlocksLocker.class, TachyonConf.class },
-              new Object[] { dataAddress, blockLocker, conf }));
+          workersDataServers.add(CommonUtils.createNewClassInstance(servers.get(i), 
+              classes, objects));
         }
         return (workersDataServers);
       } catch (Exception e) {

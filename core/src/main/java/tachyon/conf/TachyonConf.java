@@ -338,23 +338,27 @@ public class TachyonConf {
     }
   }
 
-  public static <T> List<Class<T>> getClasses(String property, Class<T> defaultValue) {
-    String ret = System.getProperty(property);
+  public <T> List<Class<T>> getClasses(String key, Class<T> defaultValue) {
     List<Class<T>> classesList = new ArrayList<Class<T>>();
-    if (ret == null) {
-      classesList.add(defaultValue);
-      return (classesList);
-    }
-    try {
-      ArrayList<String> names = new ArrayList<String>();
-      names.addAll(Arrays.asList(ret.split(",")));
-      for (int i = 0; i < names.size(); i ++) {
-        classesList.add((Class<T>) Class.forName(names.get(i)));
+    if (mProperties.containsKey(key)) {
+      String rawValue = mProperties.getProperty(key);
+      String className = "";
+      try {
+        String[] names =  rawValue.split(",");
+        LOG.info("data0 serveeeeeeeeeeeeeeeeeeers {}, {}", names, rawValue);
+        for (int i = 0; i < names.length; i ++) {
+          className = names[i];
+          classesList.add((Class<T>) Class.forName(className));
+          LOG.info("data1 serveeeeeeeeeeeeeeeeeeeer {}", classesList.get(i));
+        }
+        return (classesList);
+      } catch (Exception e) {
+        LOG.error("requested class could not be loaded : {} , {}", className, e);
+        classesList.clear();
+        classesList.add(defaultValue);
+        return (classesList);
       }
-      return (classesList);
-    } catch (Exception e) {
-      String msg = "requested class could not be loaded";
-      LOG.error("{} : {} , {}", msg, ret, e);
+    } else {
       classesList.add(defaultValue);
       return (classesList);
     }
