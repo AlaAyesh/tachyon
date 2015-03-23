@@ -16,9 +16,15 @@
 package tachyon.worker;
 
 import java.io.Closeable;
+import java.io.PrintStream;
+import java.io.ByteArrayOutputStream;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Arrays;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Throwables;
 
@@ -32,22 +38,36 @@ import tachyon.util.CommonUtils;
 public interface DataServer extends Closeable {
 
   class Factory {
+    private static final Logger LOG = LoggerFactory.getLogger(Constants.LOGGER_TYPE);
+
     public static ArrayList<DataServer> createDataServer(final InetSocketAddress dataAddress,
         final BlocksLocker blockLocker, TachyonConf conf) {
+      String server = "";
+      ArrayList<DataServer> workersDataServers = new ArrayList<DataServer>();
       try {
         Class<?>[] classes = new Class[] {InetSocketAddress.class, BlocksLocker.class, 
             TachyonConf.class};
         Object[] objects = new Object[] {dataAddress, blockLocker, conf};
         List<Class<DataServer>> servers = (List<Class<DataServer>>) (List) conf.getClasses(
             Constants.WORKER_DATA_SEVRER,Constants.WORKER_DATA_SERVER_CLASS);
-        ArrayList<DataServer> workersDataServers = new ArrayList<DataServer>();
         for (int i = 0; i < servers.size(); i ++) {
+          server = servers.get(i).getName();
           workersDataServers.add(CommonUtils.createNewClassInstance(servers.get(i), 
               classes, objects));
         }
         return (workersDataServers);
       } catch (Exception e) {
-        throw Throwables.propagate(e);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PrintStream printStream = new PrintStream(outputStream);
+        e.printStackTrace(printStream);
+        printStream.close();
+        if (outputStream.toString().contains("Address already in use")) {
+          LOG.error("Can't start two data servers that use the same transport. Failed to start {}",
+              server);
+          return (workersDataServers);
+        } else {
+          throw Throwables.propagate(e);
+        }
       }
     }
   }

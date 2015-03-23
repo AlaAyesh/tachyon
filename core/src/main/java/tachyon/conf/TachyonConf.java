@@ -345,11 +345,9 @@ public class TachyonConf {
       String className = "";
       try {
         String[] names =  rawValue.split(",");
-        LOG.info("data0 serveeeeeeeeeeeeeeeeeeers {}, {}", names, rawValue);
         for (int i = 0; i < names.length; i ++) {
           className = names[i];
           classesList.add((Class<T>) Class.forName(className));
-          LOG.info("data1 serveeeeeeeeeeeeeeeeeeeer {}", classesList.get(i));
         }
         return (classesList);
       } catch (Exception e) {

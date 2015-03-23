@@ -209,7 +209,6 @@ public class TachyonWorker implements Runnable {
     BlocksLocker blockLocker = new BlocksLocker(mWorkerStorage, Users.DATASERVER_USER_ID);
     mDataServers = DataServer.Factory.createDataServer(dataAddress, blockLocker, mTachyonConf);
     mDataPort = mDataServers.get(0).getPort();
-
     mHeartbeatThread = new Thread(this);
     try {
       LOG.info("Tachyon Worker version " + Version.VERSION + " tries to start @ " + workerAddress);
