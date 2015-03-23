@@ -52,6 +52,7 @@ public final class LocalTachyonCluster {
   private long mWorkerCapacityBytes;
   private int mUserBlockSize;
   private int mQuotaUnitBytes;
+  private int mDataPort;
 
   private String mTachyonHome;
 
@@ -195,7 +196,7 @@ public final class LocalTachyonCluster {
     mWorkerConf.set(Constants.MASTER_PORT, getMasterPort() + "");
     mWorkerConf.set(Constants.MASTER_WEB_PORT, (getMasterPort() + 1) + "");
     mWorkerConf.set(Constants.WORKER_PORT, "0");
-    mWorkerConf.set(Constants.WORKER_DATA_PORT, "0");
+    mDataPort = Integer.parseInt(mWorkerConf.get(Constants.WORKER_DATA_PORT, "0"));
     mWorkerConf.set(Constants.WORKER_DATA_FOLDER, mWorkerDataFolder);
     mWorkerConf.set(Constants.WORKER_MEMORY_SIZE, Long.toString(mWorkerCapacityBytes));
     mWorkerConf.set(Constants.WORKER_TO_MASTER_HEARTBEAT_INTERVAL_MS, "15");
@@ -221,7 +222,7 @@ public final class LocalTachyonCluster {
 
     mWorker =
         TachyonWorker.createWorker(new InetSocketAddress(mLocalhostName, getMasterPort()),
-            new InetSocketAddress(mLocalhostName, 0), 0, 1, 100, mWorkerConf);
+            new InetSocketAddress(mLocalhostName, 0), mDataPort, 1, 100, mWorkerConf);
     Runnable runWorker = new Runnable() {
       @Override
       public void run() {
